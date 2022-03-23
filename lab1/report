@@ -1,0 +1,14 @@
+[ 2058.089646] lab: opened
+[ 2058.089724] lab: write
+[ 2058.089740] lab: closed
+[ 2069.943750] lab: opened
+[ 2069.943785] lab: read
+[ 2069.943787] lab: device log
+[ 2069.943793] Text was written with letters = 3
+[ 2069.943842] lab: closed
+
+
+timetostop@timetostop-GF63-8RD:~/Desktop/lab1$ cat /proc/var5
+Device log
+Text was written with letters = 3
+
