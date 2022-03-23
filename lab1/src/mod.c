@@ -69,19 +69,15 @@ static size_t put_user_msg(char __user **buf, size_t* len, const char* msg)
     return msg_len;
 }
 
-static ssize_t lab_read(struct file* f, char __user * buf, size_t len, loff_t *off)
+static ssize_t lab_read_to_user(struct file* f, char __user * buf, size_t len, loff_t *off)
 {
     size_t current_len, diff, sum;
     struct list_impl* it;
 
     if (*off != 0) return 0;
 
-    printk(KERN_INFO "lab: read\n"); 
-
     if (get_list_size(&data) == 0) 
     {
-        printk(KERN_INFO "lab: %s", default_msg);
-
         current_len = put_user_msg(&buf, &len, default_msg);
 
         if (current_len == -ENOMEM) return -ENOMEM;
@@ -93,8 +89,6 @@ static ssize_t lab_read(struct file* f, char __user * buf, size_t len, loff_t *o
     }
     else
     {
-        printk(KERN_INFO "lab: device log\n");
-
         current_len = put_user_msg(&buf, &len, "Device log\n");
 
         if (current_len == -ENOMEM) return -ENOMEM;
@@ -103,8 +97,6 @@ static ssize_t lab_read(struct file* f, char __user * buf, size_t len, loff_t *o
 
         for (it = data.head; it != NULL; it = it->next)
         {
-            printk(KERN_INFO "Text was written with letters = %ld", it->value);
-
             if (sprintf(buffer, "Text was written with letters = %ld", it->value) < 0) return -EAGAIN; 
 
             current_len = put_user_msg(&buf, &len, buffer);
@@ -120,6 +112,46 @@ static ssize_t lab_read(struct file* f, char __user * buf, size_t len, loff_t *o
             buf++;
             len--;
             sum++;
+        }
+
+        *off += sum;
+        return sum;
+    }
+}
+
+static ssize_t lab_read_to_dmesg(struct file* f, char __user * buf, size_t len, loff_t *off)
+{
+    size_t current_len, diff, sum;
+    struct list_impl* it;
+
+    if (*off != 0) return 0;
+
+    printk(KERN_INFO "lab: read\n"); 
+
+    if (get_list_size(&data) == 0) 
+    {
+        printk(KERN_INFO "lab: %s", default_msg);
+        
+        *off += strlen(default_msg);
+
+        return diff;
+    }
+    else
+    {
+        printk(KERN_INFO "lab: device log\n");
+
+        current_len = put_user_msg(&buf, &len, "Device log\n");
+
+        if (current_len == -ENOMEM) return -ENOMEM;
+
+        sum = current_len;
+
+        for (it = data.head; it != NULL; it = it->next)
+        {
+            if (sprintf(buffer, "Text was written with letters = %ld", it->value) < 0) return -EAGAIN; 
+
+            printk(KERN_INFO "%s\n", buffer);
+            sum += strlen(buffer);
         }
 
         *off += sum;
@@ -153,7 +185,7 @@ static struct file_operations fops =
     .owner = THIS_MODULE,
     .open = lab_open,
     .release = lab_close,
-    .read = lab_read,
+    .read = lab_read_to_dmesg,
     .write = lab_write
 }; 
 
@@ -161,8 +193,7 @@ static struct proc_ops proc_ops =
 {
     .proc_open = lab_open,
     .proc_release = lab_close,
-    .proc_read = lab_read,
-    .proc_write = lab_write
+    .proc_read = lab_read_to_user
 };
 
 static int __init lab_init(void)
@@ -192,7 +223,7 @@ static int __init lab_init(void)
         return -EAGAIN;
     }
 
-    entry = proc_create("var5", 0666, NULL, &proc_ops);
+    entry = proc_create("var5", 0444, NULL, &proc_ops);
 
     if (entry == NULL) 
     {
