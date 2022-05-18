@@ -82,8 +82,7 @@ static PartTable def_part_table =
 		part_type: 0x05, // extended partition type
 		end_sec: sec4size(MEMSIZE1 + MEMSIZE2 - 1) + 1,
 		end_head: head4size(MEMSIZE1 + MEMSIZE2 - 1),
-		end_cyl: cyl4size(MEMSIZE1 + MEMSIZE2 - 1), //&0xFF??
-		//end_cyl_hi??
+		end_cyl: cyl4size(MEMSIZE1 + MEMSIZE2 - 1),
 		abs_start_sec: MEMSIZE1 + 1,
 		sec_in_part: MEMSIZE2 //30Mbyte
 	}
